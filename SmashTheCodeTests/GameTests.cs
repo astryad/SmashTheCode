@@ -17,52 +17,57 @@ namespace SmashTheCodeTests
         {
             var inputReader = A.Fake<IConsole>();
             A.CallTo(() => inputReader.ReadLine()).ReturnsNextFromSequence(
-                "0 0",
-                "0 0",
-                "0 0",
-                "0 0",
-                "0 0",
-                "0 0",
-                "0 0",
-                "0 0",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......",
-                "......");
+                "0 0", "0 0", "0 0", "0 0", "0 0", "0 0", "0 0", "0 0",
+                "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......",
+                "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......");
 
             var game = new Game(inputReader);
 
             game.ResolveTurn();
 
-            Check.That(game.NextColors).ContainsExactly(
-                new GameColor { First = 0, Second = 0}, 
-                new GameColor { First = 0, Second = 0}, 
-                new GameColor { First = 0, Second = 0}, 
-                new GameColor { First = 0, Second = 0}, 
-                new GameColor { First = 0, Second = 0}, 
-                new GameColor { First = 0, Second = 0}, 
-                new GameColor { First = 0, Second = 0}, 
-                new GameColor { First = 0, Second = 0});
+            Check.That(game.NextTurns).ContainsExactly(
+                new TurnBlocks { First = 0, Second = 0 },
+                new TurnBlocks { First = 0, Second = 0 },
+                new TurnBlocks { First = 0, Second = 0 },
+                new TurnBlocks { First = 0, Second = 0 },
+                new TurnBlocks { First = 0, Second = 0 },
+                new TurnBlocks { First = 0, Second = 0 },
+                new TurnBlocks { First = 0, Second = 0 },
+                new TurnBlocks { First = 0, Second = 0 });
+        }
+
+        [Test]
+        public void Should_read_player_board_when_resolving_a_turn()
+        {
+            var inputReader = A.Fake<IConsole>();
+            A.CallTo(() => inputReader.ReadLine()).ReturnsNextFromSequence(
+                "0 0", "0 0", "0 0", "0 0", "0 0", "0 0", "0 0", "0 0",
+                "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......",
+                "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......");
+
+            var game = new Game(inputReader);
+
+            game.ResolveTurn();
+
+            Check.That(game.PlayerBoard).ContainsExactly(
+                "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......");
+        }
+
+        [Test]
+        public void Should_read_oppenent_board_when_resolving_a_turn()
+        {
+            var inputReader = A.Fake<IConsole>();
+            A.CallTo(() => inputReader.ReadLine()).ReturnsNextFromSequence(
+                "0 0", "0 0", "0 0", "0 0", "0 0", "0 0", "0 0", "0 0",
+                "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......",
+                "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......");
+
+            var game = new Game(inputReader);
+
+            game.ResolveTurn();
+
+            Check.That(game.OpponentBoard).ContainsExactly(
+                "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......", "......");
         }
     }
 

@@ -22,6 +22,7 @@ namespace SmashTheCode
 
     public class Game
     {
+        private const int BoardHeight = 12;
         private readonly IConsole _console;
 
         public Game() : this(new SystemConsole())
@@ -36,45 +37,12 @@ namespace SmashTheCode
 
         public int ResolveTurn()
         {
-            NextColors = new GameColor[8];
+            ReadNextTurns();
 
-            for (int i = 0; i < 8; i++)
-            {
-                string[] inputs = _console.ReadLine().Split(' ');
+            _console.Debug("Next turn color: " + NextTurns[0].First);
 
-                var color = new GameColor
-                {
-                    First = int.Parse(inputs[0]),
-                    Second = int.Parse(inputs[1])
-                };
-
-                NextColors[i] = color;
-            }
-
-            _console.Debug("Current color: " + NextColors[0].First);
-
-            var columnHeights = new int[6];
-            var topColors = new int[6];
-            for (int i = 0; i < 6; i++) topColors[i] = -1;
-
-            for (int i = 0; i < 12; i++)
-            {
-                string row = _console.ReadLine();
-
-                for (int j = 0; j < 6; j++)
-                {
-                    if (topColors[j] == -1 && row[j] != '.')
-                        topColors[j] = int.Parse(row[j].ToString());
-                    if (row[j] != '.')
-                        columnHeights[j]++;
-                }
-            }
-
-            for (int i = 0; i < 12; i++)
-            {
-                // One line of the map ('.' = empty, '0' = skull block, '1' to '5' = colored block)
-                string row = _console.ReadLine();
-            }
+            ReadPlayerBoard();
+            ReadOpponentBoard();
 
             var min = 999;
             var minColumn = -1;
@@ -82,11 +50,28 @@ namespace SmashTheCode
             var minSameColor = 999;
             var sameColorColumn = -1;
 
+            var columnHeights = new int[6];
+            var topColors = new int[6];
+
+            for (var i = 0; i < 6; i++)
+                topColors[i] = -1;
+
+            for (var i = 0; i < BoardHeight; i++)
+            {
+                for (var j = 0; j < 6; j++)
+                {
+                    if (topColors[j] == -1 && PlayerBoard[i][j] != '.')
+                        topColors[j] = int.Parse(PlayerBoard[i][j].ToString());
+                    if (PlayerBoard[i][j] != '.')
+                        columnHeights[j]++;
+                }
+            }
+
             _console.Debug("Top colors: " + String.Join(" ", topColors));
 
-            for (int i = 0; i < 6; i++)
+            for (var i = 0; i < 6; i++)
             {
-                if (topColors[i] == NextColors[0].First && columnHeights[i] < minSameColor)
+                if (topColors[i] == NextTurns[0].First && columnHeights[i] < minSameColor)
                 {
                     minSameColor = columnHeights[i];
                     sameColorColumn = i;
@@ -102,17 +87,55 @@ namespace SmashTheCode
             _console.Debug("Column (s): " + sameColorColumn);
             _console.Debug("Column: " + minColumn);
 
-            // Write an action using Console.WriteLine()
-            // To debug: Console.Error.WriteLine("Debug messages...");
-
             // "x": the column in which to drop your blocks
             return sameColorColumn != -1 ? sameColorColumn : minColumn;
         }
 
-        public GameColor[] NextColors { get; private set; }
+        private void ReadPlayerBoard()
+        {
+            PlayerBoard = new string[BoardHeight];
+
+            for (var i = 0; i < BoardHeight; i++)
+            {
+                PlayerBoard[i] = _console.ReadLine();
+            }
+        }
+
+        private void ReadOpponentBoard()
+        {
+            OpponentBoard = new string[BoardHeight];
+
+            for (var i = 0; i < BoardHeight; i++)
+            {
+                // One line of the map ('.' = empty, '0' = skull block, '1' to '5' = colored block)
+                OpponentBoard[i] = _console.ReadLine(); 
+            }
+        }
+
+        private void ReadNextTurns()
+        {
+            NextTurns = new TurnBlocks[8];
+
+            for (int i = 0; i < 8; i++)
+            {
+                string[] inputs = _console.ReadLine().Split(' ');
+
+                var color = new TurnBlocks
+                {
+                    First = int.Parse(inputs[0]),
+                    Second = int.Parse(inputs[1])
+                };
+
+                NextTurns[i] = color;
+            }
+        }
+
+        public TurnBlocks[] NextTurns { get; private set; }
+        public string[] PlayerBoard { get; set; }
+        public string[] OpponentBoard { get; set; }
     }
 
-    public struct GameColor
+    public struct TurnBlocks
     {
         public int First { get; set; }
         public int Second { get; set; }
