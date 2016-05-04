@@ -107,13 +107,8 @@ namespace SmashTheCode
         public int EvaluateScore(string[] board, int column, params TurnBlocks[] nextTurns)
         {
             var score = 0;
-            var columnTop = -1;
 
-            for (var i = 0; i < 12; i++)
-            {
-                if (board[i][column] == EmptyBlock)
-                    columnTop++;
-            }
+            var columnTop = CalculateColumnTop(board, column);
 
             if (columnTop <= 0)
                 return 0;
@@ -123,37 +118,107 @@ namespace SmashTheCode
             if (columnTop < 10 && board[columnTop + 2][column] == nextTurns[0].Bottom)
                 score += 10;
 
-            if (column > 0 && board[columnTop - 1][column - 1] == nextTurns[0].Top)
-                score += 10;
-            if (column > 0 && board[columnTop][column - 1] == nextTurns[0].Bottom)
-                score += 10;
+            score += CalculateEmptyScore(board, column - 1, columnTop, nextTurns[0]);
+            score += CalculateEmptyScore2(board, column - 1, columnTop, nextTurns[0]);
+            score += CalculateEmptyScore(board, column - 2, columnTop, nextTurns[0]);
+            score += CalculateEmptyScore(board, column + 1, columnTop, nextTurns[0]);
+            score += CalculateEmptyScore2(board, column + 1, columnTop, nextTurns[0]);
+            score += CalculateEmptyScore(board, column + 2, columnTop, nextTurns[0]);
 
-            if (column < 5 && board[columnTop - 1][column + 1] == nextTurns[0].Top)
-                score += 10;
-            if (column < 5 && board[columnTop][column + 1] == nextTurns[0].Bottom)
-                score += 10;
-
-            if (column > 0 && board[columnTop - 1][column - 1] == EmptyBlock)
-                score++;
-            if (column > 0 && board[columnTop][column - 1] == EmptyBlock)
-                score++;
-
-            if (column > 1 && board[columnTop - 1][column - 2] == EmptyBlock)
-                score++;
-            if (column > 1 && board[columnTop][column - 2] == EmptyBlock)
-                score++;
-
-            if (column < 5 && board[columnTop - 1][column + 1] == EmptyBlock)
-                score++;
-            if (column < 5 && board[columnTop][column + 1] == EmptyBlock)
-                score++;
-
-            if (column < 4 && board[columnTop - 1][column + 2] == EmptyBlock)
-                score++;
-            if (column < 4 && board[columnTop][column + 2] == EmptyBlock)
-                score++;
+            if (column < 4 && nextTurns.Length > 1 && nextTurns[0].Top == nextTurns[1].Top)
+            {
+                if (board[columnTop][column + 2] == nextTurns[0].Bottom && board[columnTop][column + 1] == EmptyBlock)
+                {
+                    score += 20;
+                }
+                if (board[columnTop - 1][column + 2] == nextTurns[0].Top && board[columnTop - 1][column + 1] == EmptyBlock)
+                {
+                    score += 20;
+                }
+            }
+            if (column > 1 && nextTurns.Length > 1 && nextTurns[0].Top == nextTurns[1].Top)
+            {
+                if (board[columnTop][column - 2] == nextTurns[0].Bottom && board[columnTop][column - 1] == EmptyBlock)
+                {
+                    score += 20;
+                }
+                if (board[columnTop - 1][column - 2] == nextTurns[0].Top && board[columnTop - 1][column - 1] == EmptyBlock)
+                {
+                    score += 20;
+                }
+            }
 
             return score;
+        }
+
+        private static int CalculateEmptyScore(string[] board, int column, int columnTop, TurnBlocks turn)
+        {
+            if (IsOutOfBoard(column))
+                return 0;
+
+            if (HasEmptyBlockUnder(board, column, columnTop))
+                return 0;
+
+            var score = 0;
+
+            score += GetScore(board, column, columnTop - 1, turn.Top);
+            score += GetScore(board, column, columnTop, turn.Bottom);
+
+            return score;
+        }
+
+        private static int GetScore(string[] board, int column, int columnTop, char turnBlock)
+        {
+            if (board[columnTop][column] == EmptyBlock)
+                return 1;
+
+            return 0;
+        }
+
+        private static int CalculateEmptyScore2(string[] board, int column, int columnTop, TurnBlocks turn)
+        {
+            if (IsOutOfBoard(column))
+                return 0;
+
+            if (HasEmptyBlockUnder(board, column, columnTop))
+                return 0;
+
+            var score = 0;
+
+            score += GetScore2(board, column, columnTop - 1, turn.Top);
+            score += GetScore2(board, column, columnTop, turn.Bottom);
+
+            return score;
+        }
+
+        private static int GetScore2(string[] board, int column, int columnTop, char turnBlock)
+        {
+            if (board[columnTop][column] == turnBlock)
+                return 10;
+
+            return 0;
+        }
+
+        private static bool HasEmptyBlockUnder(string[] board, int column, int columnTop)
+        {
+            return columnTop < 11 && board[columnTop + 1][column] == EmptyBlock;
+        }
+
+        private static bool IsOutOfBoard(int column)
+        {
+            return column < 0 || column > 5;
+        }
+
+        private static int CalculateColumnTop(string[] board, int column)
+        {
+            var columnTop = -1;
+
+            for (var i = 0; i < 12; i++)
+            {
+                if (board[i][column] == EmptyBlock)
+                    columnTop++;
+            }
+            return columnTop;
         }
     }
 

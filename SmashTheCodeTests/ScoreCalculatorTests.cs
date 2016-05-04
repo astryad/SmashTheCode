@@ -140,5 +140,55 @@ namespace SmashTheCodeTests
 
             Check.That(actual).IsEqualTo(0);
         }
+
+        [Test]
+        public void Should_not_score_points_for_side_empty_blocks_when_there_are_empty_blocks_under()
+        {
+            var board = new[]
+{
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "..3...",
+                "..3..."
+           };
+
+            var scoreCalculator = new ScoreCalculator();
+            var actual = scoreCalculator.EvaluateScore(board, 2, new TurnBlocks { Top = '4', Bottom = '4' });
+
+            Check.That(actual).IsEqualTo(0);
+        }
+
+        [Test]
+        public void Should_score_bonus_points_when_a_6_combo_can_be_done_with_2_next_turns()
+        {
+            var board = new[]
+{
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "......",
+                "..4...",
+                "..4..."
+           };
+
+            var scoreCalculator = new ScoreCalculator();
+            var actual = scoreCalculator.EvaluateScore(board, 0, new TurnBlocks { Top = '4', Bottom = '4' }, new TurnBlocks { Top = '4', Bottom = '4' });
+
+            Check.That(actual).IsEqualTo(42);
+        }
     }
 }
