@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 /**
  * Auto-generated code below aims at helping you parse
@@ -44,51 +45,15 @@ namespace SmashTheCode
             ReadPlayerBoard();
             ReadOpponentBoard();
 
-            var min = 999;
-            var minColumn = -1;
-
-            var minSameColor = 999;
-            var sameColorColumn = -1;
-
-            var columnHeights = new int[6];
-            var topColors = new int[6];
-
-            for (var i = 0; i < 6; i++)
-                topColors[i] = -1;
-
-            for (var i = 0; i < BoardHeight; i++)
-            {
-                for (var j = 0; j < 6; j++)
+            var scoreCalculator = new ScoreCalculator();
+            var columnScore = Enumerable.Range(0, 6).Select(
+                i => new
                 {
-                    if (topColors[j] == -1 && PlayerBoard[i][j] != '.')
-                        topColors[j] = int.Parse(PlayerBoard[i][j].ToString());
-                    if (PlayerBoard[i][j] != '.')
-                        columnHeights[j]++;
-                }
-            }
+                    Column = i,
+                    Score = scoreCalculator.EvaluateScore(PlayerBoard, i, NextTurns)
+                });
 
-            _console.Debug("Top colors: " + String.Join(" ", topColors));
-
-            for (var i = 0; i < 6; i++)
-            {
-                if (topColors[i] == NextTurns[0].Top && columnHeights[i] < minSameColor)
-                {
-                    minSameColor = columnHeights[i];
-                    sameColorColumn = i;
-                }
-
-                if (columnHeights[i] < min)
-                {
-                    min = columnHeights[i];
-                    minColumn = i;
-                }
-            }
-
-            _console.Debug("Column (s): " + sameColorColumn);
-            _console.Debug("Column: " + minColumn);
-
-            // "x": the column in which to drop your blocks
-            return sameColorColumn != -1 ? sameColorColumn : minColumn;
+            return columnScore.OrderByDescending(c => c.Score).First().Column;
         }
 
         private void ReadPlayerBoard()
@@ -141,14 +106,17 @@ namespace SmashTheCode
 
         public int EvaluateScore(string[] board, int column, params TurnBlocks[] nextTurns)
         {
-            int score = 0;
-            int columnTop = -1;
+            var score = 0;
+            var columnTop = -1;
 
-            for (int i = 0; i < 12; i++)
+            for (var i = 0; i < 12; i++)
             {
                 if (board[i][column] == EmptyBlock)
                     columnTop++;
             }
+
+            if (columnTop <= 0)
+                return 0;
 
             if (columnTop < 11 && board[columnTop + 1][column] == nextTurns[0].Bottom)
                 score += 10;

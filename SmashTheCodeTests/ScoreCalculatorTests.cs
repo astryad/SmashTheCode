@@ -44,7 +44,7 @@ namespace SmashTheCodeTests
         [Test]
         public void Should_score_26_points_when_column_has_2_blocks_of_same_color_on_left_and_empty_spaces()
         {
-            var board = new string[]
+            var board = new[]
             {
                 "......",
                 "......",
@@ -69,7 +69,7 @@ namespace SmashTheCodeTests
         [Test]
         public void Should_score_26_points_when_column_has_2_blocks_of_same_color_on_right_and_empty_spaces()
         {
-            var board = new string[]
+            var board = new[]
             {
                 "......",
                 "......",
@@ -94,7 +94,7 @@ namespace SmashTheCodeTests
         [Test]
         public void Should_score_28_points_when_column_has_empty_blocks_on_sides_and_two_blocks_of_same_color_under()
         {
-            var board = new string[]
+            var board = new[]
             {
                 "......",
                 "......",
@@ -114,6 +114,31 @@ namespace SmashTheCodeTests
             var actual = scoreCalculator.EvaluateScore(board, 3, new TurnBlocks { Top = '4', Bottom = '4' });
 
             Check.That(actual).IsEqualTo(28);
+        }
+
+        [Test]
+        public void Should_score_0_points_when_column_has_not_enough_space()
+        {
+            var board = new[]
+           {
+                ".0....",
+                ".0....",
+                ".1....",
+                ".1....",
+                ".2....",
+                ".2....",
+                ".3....",
+                ".3....",
+                ".4....",
+                ".4....",
+                ".5....",
+                ".5...."
+           };
+
+            var scoreCalculator = new ScoreCalculator();
+            var actual = scoreCalculator.EvaluateScore(board, 1, new TurnBlocks { Top = '4', Bottom = '4' });
+
+            Check.That(actual).IsEqualTo(0);
         }
     }
 }
