@@ -39,7 +39,7 @@ namespace SmashTheCode
         {
             ReadNextTurns();
 
-            _console.Debug("Next turn color: " + NextTurns[0].First);
+            _console.Debug("Next turn color: " + NextTurns[0].Top);
 
             ReadPlayerBoard();
             ReadOpponentBoard();
@@ -71,7 +71,7 @@ namespace SmashTheCode
 
             for (var i = 0; i < 6; i++)
             {
-                if (topColors[i] == NextTurns[0].First && columnHeights[i] < minSameColor)
+                if (topColors[i] == NextTurns[0].Top && columnHeights[i] < minSameColor)
                 {
                     minSameColor = columnHeights[i];
                     sameColorColumn = i;
@@ -122,8 +122,8 @@ namespace SmashTheCode
 
                 var color = new TurnBlocks
                 {
-                    First = int.Parse(inputs[0]),
-                    Second = int.Parse(inputs[1])
+                    Top = inputs[0][0],
+                    Bottom = inputs[1][0]
                 };
 
                 NextTurns[i] = color;
@@ -135,10 +135,42 @@ namespace SmashTheCode
         public string[] OpponentBoard { get; set; }
     }
 
+    public class ScoreCalculator
+    {
+        private const char EmptyBlock = '.';
+
+        public int EvaluateScore(string[] board, int column, params TurnBlocks[] nexTturns)
+        {
+            int score = 0;
+
+            if (column > 0 && board[10][column - 1] == EmptyBlock)
+                score++;
+            if (column > 0 && board[11][column - 1] == EmptyBlock)
+                score++;
+
+            if (column > 1 && board[10][column - 2] == EmptyBlock)
+                score++;
+            if (column > 1 && board[11][column - 2] == EmptyBlock)
+                score++;
+
+            if (column < 5 && board[10][column + 1] == EmptyBlock)
+                score++;
+            if (column < 5 && board[11][column + 1] == EmptyBlock)
+                score++;
+
+            if (column < 4 && board[10][column + 2] == EmptyBlock)
+                score++;
+            if (column < 4 && board[11][column + 2] == EmptyBlock)
+                score++;
+
+            return score;
+        }
+    }
+
     public struct TurnBlocks
     {
-        public int First { get; set; }
-        public int Second { get; set; }
+        public char Top { get; set; }
+        public char Bottom { get; set; }
     }
 
     public interface IConsole

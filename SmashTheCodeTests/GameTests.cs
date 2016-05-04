@@ -26,14 +26,14 @@ namespace SmashTheCodeTests
             game.ResolveTurn();
 
             Check.That(game.NextTurns).ContainsExactly(
-                new TurnBlocks { First = 0, Second = 0 },
-                new TurnBlocks { First = 0, Second = 0 },
-                new TurnBlocks { First = 0, Second = 0 },
-                new TurnBlocks { First = 0, Second = 0 },
-                new TurnBlocks { First = 0, Second = 0 },
-                new TurnBlocks { First = 0, Second = 0 },
-                new TurnBlocks { First = 0, Second = 0 },
-                new TurnBlocks { First = 0, Second = 0 });
+                new TurnBlocks { Top = '0', Bottom = '0' },
+                new TurnBlocks { Top = '0', Bottom = '0' },
+                new TurnBlocks { Top = '0', Bottom = '0' },
+                new TurnBlocks { Top = '0', Bottom = '0' },
+                new TurnBlocks { Top = '0', Bottom = '0' },
+                new TurnBlocks { Top = '0', Bottom = '0' },
+                new TurnBlocks { Top = '0', Bottom = '0' },
+                new TurnBlocks { Top = '0', Bottom = '0' });
         }
 
         [Test]
