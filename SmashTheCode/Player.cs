@@ -27,7 +27,7 @@ namespace SmashTheCode
 
         public Game() : this(new SystemConsole())
         {
-            
+
         }
 
         public Game(IConsole console)
@@ -108,7 +108,7 @@ namespace SmashTheCode
             for (var i = 0; i < BoardHeight; i++)
             {
                 // One line of the map ('.' = empty, '0' = skull block, '1' to '5' = colored block)
-                OpponentBoard[i] = _console.ReadLine(); 
+                OpponentBoard[i] = _console.ReadLine();
             }
         }
 
@@ -139,28 +139,50 @@ namespace SmashTheCode
     {
         private const char EmptyBlock = '.';
 
-        public int EvaluateScore(string[] board, int column, params TurnBlocks[] nexTturns)
+        public int EvaluateScore(string[] board, int column, params TurnBlocks[] nextTurns)
         {
             int score = 0;
+            int columnTop = -1;
 
-            if (column > 0 && board[10][column - 1] == EmptyBlock)
+            for (int i = 0; i < 12; i++)
+            {
+                if (board[i][column] == EmptyBlock)
+                    columnTop++;
+            }
+
+            if (columnTop < 11 && board[columnTop + 1][column] == nextTurns[0].Bottom)
+                score += 10;
+            if (columnTop < 10 && board[columnTop + 2][column] == nextTurns[0].Bottom)
+                score += 10;
+
+            if (column > 0 && board[columnTop - 1][column - 1] == nextTurns[0].Top)
+                score += 10;
+            if (column > 0 && board[columnTop][column - 1] == nextTurns[0].Bottom)
+                score += 10;
+
+            if (column < 5 && board[columnTop - 1][column + 1] == nextTurns[0].Top)
+                score += 10;
+            if (column < 5 && board[columnTop][column + 1] == nextTurns[0].Bottom)
+                score += 10;
+
+            if (column > 0 && board[columnTop - 1][column - 1] == EmptyBlock)
                 score++;
-            if (column > 0 && board[11][column - 1] == EmptyBlock)
+            if (column > 0 && board[columnTop][column - 1] == EmptyBlock)
                 score++;
 
-            if (column > 1 && board[10][column - 2] == EmptyBlock)
+            if (column > 1 && board[columnTop - 1][column - 2] == EmptyBlock)
                 score++;
-            if (column > 1 && board[11][column - 2] == EmptyBlock)
-                score++;
-
-            if (column < 5 && board[10][column + 1] == EmptyBlock)
-                score++;
-            if (column < 5 && board[11][column + 1] == EmptyBlock)
+            if (column > 1 && board[columnTop][column - 2] == EmptyBlock)
                 score++;
 
-            if (column < 4 && board[10][column + 2] == EmptyBlock)
+            if (column < 5 && board[columnTop - 1][column + 1] == EmptyBlock)
                 score++;
-            if (column < 4 && board[11][column + 2] == EmptyBlock)
+            if (column < 5 && board[columnTop][column + 1] == EmptyBlock)
+                score++;
+
+            if (column < 4 && board[columnTop - 1][column + 2] == EmptyBlock)
+                score++;
+            if (column < 4 && board[columnTop][column + 2] == EmptyBlock)
                 score++;
 
             return score;
