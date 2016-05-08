@@ -45,12 +45,29 @@ namespace SmashTheCode
             ReadPlayerBoard();
             ReadOpponentBoard();
 
-            var scoreCalculator = new ScoreCalculator();
+            var board = new Board(PlayerBoard);
+
             var columnScore = Enumerable.Range(0, 6).Select(
-                i => new
+                i =>
                 {
-                    Column = i,
-                    Score = scoreCalculator.EvaluateScore(PlayerBoard, i, NextTurns)
+                    var nextBoard = board.Play(NextTurns[0], i);
+
+                    var score = nextBoard.ResolveCombos();
+
+                    var secondTurnScores = Enumerable.Range(0, 6).Select(
+                        j => new
+                        {
+                            Column = j,
+                            Score = nextBoard.Play(NextTurns[1], j).ResolveCombos()
+                        });
+
+                    score += secondTurnScores.OrderByDescending(c => c.Score).First().Column;
+
+                    return new
+                    {
+                        Column = i,
+                        Score = score
+                    };
                 });
 
             return columnScore.OrderByDescending(c => c.Score).First().Column;
@@ -100,11 +117,25 @@ namespace SmashTheCode
         public string[] OpponentBoard { get; set; }
     }
 
-    public class Board
+    public interface IBoard
     {
-        private readonly string[] _boardData;
+        string[] BoardData { get; }
+        int ResolveCombos();
+        int CalculateCombo(int row, int column);
+        void UpdateBoard();
+        bool IsVisited(int row, int column);
+        char GetBlockType(int row, int column);
+        IBoard Play(TurnBlocks turnBlocks, int column);
+    }
 
+    public class Board : IBoard
+    {
         private readonly Block[][] _blocks;
+
+        public string[] BoardData
+        {
+            get { return _blocks.Select(row => string.Join("", row.Select(block => block.BlockType))).ToArray(); }
+        }
 
         public Board(string[] boardData)
         {
@@ -121,9 +152,9 @@ namespace SmashTheCode
 
         private class Block
         {
-            public char BlockType { get; }
-            public int Row { get; }
-            public int Column { get; }
+            public char BlockType { get; set; }
+            public int Row { get; private set; }
+            public int Column { get; private set; }
 
             public Block(char blockType, int row, int column)
             {
@@ -140,10 +171,21 @@ namespace SmashTheCode
         {
             var score = 0;
 
-            for (var i = 11; i >= 0; --i)
+            int turnScore = 0;
+            do
             {
-                score += _blocks[i].Count(b => b.BlockType != '.');
-            }
+                turnScore = 0;
+                for (int i = 11; i >= 0; i--)
+                {
+                    for (int j = 0; j < 6; j++)
+                    {
+                        turnScore += CalculateCombo(i, j);
+                    }
+                }
+
+                UpdateBoard();
+                score += turnScore;
+            } while (turnScore != 0);
 
             return score;
         }
@@ -159,144 +201,123 @@ namespace SmashTheCode
 
             var blocksToCheck = new Stack<Block>();
             blocksToCheck.Push(start);
-            var score = 0;
+
+            var comboBlocks = new List<Block>();
+
             while (blocksToCheck.Count > 0)
             {
                 var block = blocksToCheck.Pop();
 
                 if (!block.Visited && block.BlockType == startType)
                 {
-                    score++;
-                    if(block.Column > 0) blocksToCheck.Push(_blocks[block.Row][block.Column - 1]);
-                    if(block.Column < 5) blocksToCheck.Push(_blocks[block.Row][block.Column + 1]);
-                    if(block.Row > 0) blocksToCheck.Push(_blocks[block.Row - 1][block.Column]);
+                    comboBlocks.Add(block);
+                    if (block.Column > 0) blocksToCheck.Push(_blocks[block.Row][block.Column - 1]);
+                    if (block.Column < 5) blocksToCheck.Push(_blocks[block.Row][block.Column + 1]);
+                    if (block.Row > 0) blocksToCheck.Push(_blocks[block.Row - 1][block.Column]);
                     block.Visited = true;
                 }
             }
 
-            return score;
+            if (comboBlocks.Count > 3)
+            {
+                comboBlocks.ForEach(block => block.BlockType = '.');
+                return comboBlocks.Count;
+            }
+
+            return 0;
+        }
+
+        public void UpdateBoard()
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                for (int j = 11; j >= 0; j--)
+                {
+                    _blocks[j][i].Visited = false;
+
+                    if (_blocks[j][i].BlockType == '.')
+                    {
+                        int shift = j;
+                        while (shift >= 0 && _blocks[shift][i].BlockType == '.')
+                            shift--;
+
+                        int row = j;
+                        while (shift >= 0)
+                        {
+                            _blocks[row][i].BlockType = _blocks[shift][i].BlockType;
+                            row--;
+                            shift--;
+                        }
+
+                        while (row >= 0)
+                        {
+                            _blocks[row][i].BlockType = '.';
+                            row--;
+                        }
+                    }
+                }
+            }
+        }
+
+        public bool IsVisited(int row, int column)
+        {
+            return _blocks[row][column].Visited;
+        }
+
+        public char GetBlockType(int row, int column)
+        {
+            return _blocks[row][column].BlockType;
+        }
+
+        public IBoard Play(TurnBlocks turnBlocks, int column)
+        {
+            var newBoard = new Board(BoardData);
+
+            var row = 11;
+            while (newBoard._blocks[row][column].BlockType != '.' && row > 0)
+                row--;
+
+            if (row == 0)
+                return new InvalidBoard();
+
+            newBoard._blocks[row][column].BlockType = turnBlocks.Bottom;
+            newBoard._blocks[row - 1][column].BlockType = turnBlocks.Top;
+
+            return newBoard;
         }
     }
 
-    public class ScoreCalculator
+    public class InvalidBoard : IBoard
     {
-        private const char EmptyBlock = '.';
-
-        public int EvaluateScore(string[] board, int column, params TurnBlocks[] nextTurns)
+        public string[] BoardData { get; private set; }
+        public int ResolveCombos()
         {
-            var score = 0;
-
-            var columnTop = CalculateColumnTop(board, column);
-
-            if (columnTop <= 0)
-                return 0;
-
-            if (columnTop < 11 && board[columnTop + 1][column] == nextTurns[0].Bottom)
-                score += 10;
-            if (columnTop < 10 && board[columnTop + 2][column] == nextTurns[0].Bottom)
-                score += 10;
-
-            score += CalculateEmptyScore(board, column - 1, columnTop, nextTurns[0]);
-            score += CalculateEmptyScore2(board, column - 1, columnTop, nextTurns[0]);
-            score += CalculateEmptyScore(board, column - 2, columnTop, nextTurns[0]);
-            score += CalculateEmptyScore(board, column + 1, columnTop, nextTurns[0]);
-            score += CalculateEmptyScore2(board, column + 1, columnTop, nextTurns[0]);
-            score += CalculateEmptyScore(board, column + 2, columnTop, nextTurns[0]);
-
-            if (column < 4 && nextTurns.Length > 1 && nextTurns[0].Top == nextTurns[1].Top)
-            {
-                if (board[columnTop][column + 2] == nextTurns[0].Bottom && board[columnTop][column + 1] == EmptyBlock)
-                {
-                    score += 20;
-                }
-                if (board[columnTop - 1][column + 2] == nextTurns[0].Top && board[columnTop - 1][column + 1] == EmptyBlock)
-                {
-                    score += 20;
-                }
-            }
-            if (column > 1 && nextTurns.Length > 1 && nextTurns[0].Top == nextTurns[1].Top)
-            {
-                if (board[columnTop][column - 2] == nextTurns[0].Bottom && board[columnTop][column - 1] == EmptyBlock)
-                {
-                    score += 20;
-                }
-                if (board[columnTop - 1][column - 2] == nextTurns[0].Top && board[columnTop - 1][column - 1] == EmptyBlock)
-                {
-                    score += 20;
-                }
-            }
-
-            return score;
+            return -100;
         }
 
-        private static int CalculateEmptyScore(string[] board, int column, int columnTop, TurnBlocks turn)
+        public int CalculateCombo(int row, int column)
         {
-            if (IsOutOfBoard(column))
-                return 0;
-
-            if (HasEmptyBlockUnder(board, column, columnTop))
-                return 0;
-
-            var score = 0;
-
-            score += GetScore(board, column, columnTop - 1, turn.Top);
-            score += GetScore(board, column, columnTop, turn.Bottom);
-
-            return score;
+            throw new NotImplementedException();
         }
 
-        private static int GetScore(string[] board, int column, int columnTop, char turnBlock)
+        public void UpdateBoard()
         {
-            if (board[columnTop][column] == EmptyBlock)
-                return 1;
-
-            return 0;
+            throw new NotImplementedException();
         }
 
-        private static int CalculateEmptyScore2(string[] board, int column, int columnTop, TurnBlocks turn)
+        public bool IsVisited(int row, int column)
         {
-            if (IsOutOfBoard(column))
-                return 0;
-
-            if (HasEmptyBlockUnder(board, column, columnTop))
-                return 0;
-
-            var score = 0;
-
-            score += GetScore2(board, column, columnTop - 1, turn.Top);
-            score += GetScore2(board, column, columnTop, turn.Bottom);
-
-            return score;
+            throw new NotImplementedException();
         }
 
-        private static int GetScore2(string[] board, int column, int columnTop, char turnBlock)
+        public char GetBlockType(int row, int column)
         {
-            if (board[columnTop][column] == turnBlock)
-                return 10;
-
-            return 0;
+            throw new NotImplementedException();
         }
 
-        private static bool HasEmptyBlockUnder(string[] board, int column, int columnTop)
+        public IBoard Play(TurnBlocks turnBlocks, int column)
         {
-            return columnTop < 11 && board[columnTop + 1][column] == EmptyBlock;
-        }
-
-        private static bool IsOutOfBoard(int column)
-        {
-            return column < 0 || column > 5;
-        }
-
-        private static int CalculateColumnTop(string[] board, int column)
-        {
-            var columnTop = -1;
-
-            for (var i = 0; i < 12; i++)
-            {
-                if (board[i][column] == EmptyBlock)
-                    columnTop++;
-            }
-            return columnTop;
+            return this;
         }
     }
 
