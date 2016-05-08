@@ -100,6 +100,84 @@ namespace SmashTheCode
         public string[] OpponentBoard { get; set; }
     }
 
+    public class Board
+    {
+        private readonly string[] _boardData;
+
+        private readonly Block[][] _blocks;
+
+        public Board(string[] boardData)
+        {
+            _blocks = new Block[12][];
+            for (var i = 0; i < 12; i++)
+            {
+                _blocks[i] = new Block[6];
+                for (var j = 0; j < 6; j++)
+                {
+                    _blocks[i][j] = new Block(boardData[i][j], i, j);
+                }
+            }
+        }
+
+        private class Block
+        {
+            public char BlockType { get; }
+            public int Row { get; }
+            public int Column { get; }
+
+            public Block(char blockType, int row, int column)
+            {
+                Visited = false;
+                BlockType = blockType;
+                Row = row;
+                Column = column;
+            }
+
+            public bool Visited { get; set; }
+        }
+
+        public int ResolveCombos()
+        {
+            var score = 0;
+
+            for (var i = 11; i >= 0; --i)
+            {
+                score += _blocks[i].Count(b => b.BlockType != '.');
+            }
+
+            return score;
+        }
+
+        public int CalculateCombo(int row, int column)
+        {
+            var start = _blocks[row][column];
+
+            if (start.BlockType == '.')
+                return 0;
+
+            var startType = start.BlockType;
+
+            var blocksToCheck = new Stack<Block>();
+            blocksToCheck.Push(start);
+            var score = 0;
+            while (blocksToCheck.Count > 0)
+            {
+                var block = blocksToCheck.Pop();
+
+                if (!block.Visited && block.BlockType == startType)
+                {
+                    score++;
+                    if(block.Column > 0) blocksToCheck.Push(_blocks[block.Row][block.Column - 1]);
+                    if(block.Column < 5) blocksToCheck.Push(_blocks[block.Row][block.Column + 1]);
+                    if(block.Row > 0) blocksToCheck.Push(_blocks[block.Row - 1][block.Column]);
+                    block.Visited = true;
+                }
+            }
+
+            return score;
+        }
+    }
+
     public class ScoreCalculator
     {
         private const char EmptyBlock = '.';
